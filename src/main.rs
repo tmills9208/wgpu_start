@@ -19,7 +19,7 @@ impl State {
     async fn new(window: &Window) -> Self {
         let size = window.inner_size();
 
-        // The instance is a handle t our GPU
+        // The instance is a handle to our GPU
         // Backends::all => Vulkan + Metal + DX12 + Browser WebGPU
         let instance = wgpu::Instance::new(wgpu::Backends::all());
         let surface = unsafe { instance.create_surface(window) };
@@ -44,7 +44,7 @@ impl State {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: surface.get_preferred_format(&adapter).unwrap(),
             width: size.width,
-            height: size.width,
+            height: size.height,
             present_mode: wgpu::PresentMode::Fifo,
         };
         surface.configure(&device, &config);
