@@ -12,6 +12,7 @@ struct State {
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
     size: PhysicalSize<u32>,
+    clear_color: wgpu::Color,
 }
 
 impl State {
@@ -49,12 +50,15 @@ impl State {
         };
         surface.configure(&device, &config);
 
+        let clear_color = wgpu::Color::BLACK;
+
         return Self {
             surface,
             device,
             queue,
             config,
-            size
+            size,
+            clear_color
         }
     }
 
@@ -67,8 +71,19 @@ impl State {
         }
     }
 
-    fn input(&mut self, _event: &WindowEvent) -> bool {
-        return false;
+    fn input(&mut self, event: &WindowEvent) -> bool {
+        match event {
+            WindowEvent::CursorMoved { position, .. } => {
+                self.clear_color = wgpu::Color {
+                    r: position.x as f64 / self.size.width as f64,
+                    g: position.y as f64 / self.size.height as f64,
+                    b: 1.0,
+                    a: 1.0
+                };
+                return true;
+            },
+            _ => return false
+        }
     }
 
     fn update(&mut self) {
@@ -84,19 +99,14 @@ impl State {
             label: Some("Render Encoder"),
         });
 
-        { // Extra code block to drop the render pass. so encoder can stop being borrowed and finish. Needs better explanation. 
+        { // Extra code block to drop the render pass. so encoder can stop being 'borrowed' and finish. Borrowing is a rust concept
             let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[wgpu::RenderPassColorAttachment {
                     view: &view,
                     resolve_target: None,
                     ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.1,
-                            g: 0.2,
-                            b: 0.3,
-                            a: 1.0,
-                        }),
+                        load: wgpu::LoadOp::Clear(self.clear_color),
                         store: true,
                     }
                 }],
@@ -142,14 +152,12 @@ fn main() {
                     // new_inner_size is &&mut so w have to dereference it twice
                     state.resize(**new_inner_size);
                 },
+                WindowEvent::CursorMoved { .. } => {
+
+                },
                 _ => {}
             }
         },
-        /*
-        * Currently an error right here, where it only tells me its outdated.
-        * Need to learn how to debug this error properly, get extra details, which line?, etc.
-        * Something in the state.render() perhaps
-        */
         Event::RedrawRequested(_) => {
             state.update();
             match state.render() {
@@ -169,21 +177,3 @@ fn main() {
         _ => {}
     });
 }
-
-// match event {
-//     // ...
-
-//     } if window_id == window.id() => if !state.input(event) {
-//         match event {
-//             // ...
-
-//             WindowEvent::Resized(physical_size) => {
-//                 state.resize(*physical_size);
-//             }
-//             WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
-//                 // new_inner_size is &&mut so we have to dereference it twice
-//                 state.resize(**new_inner_size);
-//             }
-//             // ...
-// }
-
